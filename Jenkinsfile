@@ -55,19 +55,51 @@ pipeline {
 }
 
         stage("deployCompose") {
-            steps {
-                script {
-                    echo "Deploying with Docker Compose..."
-                    sshagent(['ec2']) {
-                        // Upload files once to reduce redundant SCP commands
-                        bat """
-                        scp -o StrictHostKeyChecking=no ${DotEnvFile} ${DockerComposeFile} ubuntu@${EC2_IP}:/home/ubuntu
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "docker compose -f /home/ubuntu/${DockerComposeFile} --env-file /home/ubuntu/${DotEnvFile} down"
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} "docker compose -f /home/ubuntu/${DockerComposeFile} --env-file /home/ubuntu/${DotEnvFile} up -d"
-                        """
-                    }
-                }
-            }
+    steps {
+        echo "Deploying with Docker Compose..."
+
+        withCredentials([
+            sshUserPrivateKey(
+                credentialsId: 'ec2',
+                keyFileVariable: 'EC2_KEY',
+                usernameVariable: 'EC2_USER'
+            )
+        ]) {
+            bat '''
+                @echo off
+
+                scp -i "%EC2_KEY%" ^
+                    -o StrictHostKeyChecking=no ^
+                    "%DotEnvFile%" "%DockerComposeFile%" ^
+                    "%EC2_USER%@%EC2_IP%:/home/ubuntu/"
+
+                if errorlevel 1 (
+                    echo File upload failed.
+                    exit /b 1
+                )
+
+                ssh -i "%EC2_KEY%" ^
+                    -o StrictHostKeyChecking=no ^
+                    "%EC2_USER%@%EC2_IP%" ^
+                    "docker compose -f /home/ubuntu/%DockerComposeFile% --env-file /home/ubuntu/%DotEnvFile% down"
+
+                if errorlevel 1 (
+                    echo Docker Compose down failed.
+                    exit /b 1
+                )
+
+                ssh -i "%EC2_KEY%" ^
+                    -o StrictHostKeyChecking=no ^
+                    "%EC2_USER%@%EC2_IP%" ^
+                    "docker compose -f /home/ubuntu/%DockerComposeFile% --env-file /home/ubuntu/%DotEnvFile% pull && docker compose -f /home/ubuntu/%DockerComposeFile% --env-file /home/ubuntu/%DotEnvFile% up -d"
+
+                if errorlevel 1 (
+                    echo Docker Compose deployment failed.
+                    exit /b 1
+                )
+            '''
         }
+    }
+}
     }
 }
