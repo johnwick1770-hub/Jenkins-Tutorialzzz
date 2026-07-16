@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         ImageRegistry = 'shaahidgg'
-        ImageRepository = 'phpcontactform' 
+        ImageRepository = 'php-contactform' 
         EC2_IP = '50.17.126.209'
         DockerComposeFile = 'docker-compose.yml'
         DotEnvFile = '.env'
