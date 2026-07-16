@@ -1,7 +1,7 @@
 services:
   # PHP Application
   php-app:
-    image: shaahidgg/docker:1
+    image: shaahidgg/php-contactform:${IMAGE_TAG}
     container_name: php-app
     ports:
       - "80:80"  # Expose port 80 on the container to port 8080 on localhost
