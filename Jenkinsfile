@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        ImageRegistry = 'Shaahidgg' 
+        ImageRegistry = 'shaahidgg' 
         EC2_IP = '50.17.126.209'
         DockerComposeFile = 'docker-compose.yml'
         DotEnvFile = '.env'
