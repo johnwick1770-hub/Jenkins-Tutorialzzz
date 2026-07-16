@@ -60,7 +60,7 @@ pipeline {
 
         withCredentials([
             sshUserPrivateKey(
-                credentialsId: 'ubuntu',
+                credentialsId: 'ec2',
                 keyFileVariable: 'EC2_KEY',
                 usernameVariable: 'EC2_USER'
             )
