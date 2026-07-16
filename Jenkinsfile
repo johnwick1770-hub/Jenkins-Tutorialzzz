@@ -20,24 +20,34 @@ pipeline {
             }
         }
 
-        stage("pushImage") {
+        stage('pushImage') {
     steps {
-        echo "Pushing Image to DockerHub..."
+        echo 'Pushing Image to DockerHub...'
 
         withCredentials([
             usernamePassword(
                 credentialsId: 'dockerhub-pat',
-                usernameVariable: 'USER',
-                passwordVariable: 'PASS'
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
             )
         ]) {
             powershell '''
-                $env:PASS | docker login --username $env:USER --password-stdin
+                docker logout
+
+                $env:DOCKER_TOKEN | docker login `
+                    --username $env:DOCKER_USER `
+                    --password-stdin
+
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Docker Hub login failed."
+                }
+
+                docker push shaahidgg/php-contactform:${env:BUILD_NUMBER}
+
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Docker image push failed."
+                }
             '''
-
-            bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
-
-            bat "docker logout"
         }
     }
 }
