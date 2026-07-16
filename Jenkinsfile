@@ -31,29 +31,24 @@ pipeline {
                 passwordVariable: 'DOCKER_TOKEN'
             )
         ]) {
-            powershell '''
-                Write-Host "Docker username: $env:DOCKER_USER"
-                Write-Host "Token length: $($env:DOCKER_TOKEN.Length)"
+            bat '''
+                @echo off
 
-                if ([string]::IsNullOrWhiteSpace($env:DOCKER_TOKEN)) {
-                    throw "Jenkins did not load the Docker Hub token."
-                }
+                docker logout >nul 2>&1
 
-                docker logout 2>$null
+                echo %DOCKER_TOKEN%| docker login --username %DOCKER_USER% --password-stdin
 
-                $env:DOCKER_TOKEN | docker login `
-                    --username "$env:DOCKER_USER" `
-                    --password-stdin
+                if errorlevel 1 (
+                    echo Docker Hub login failed.
+                    exit /b 1
+                )
 
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Docker Hub login failed."
-                }
+                docker push shaahidgg/php-contactform:%BUILD_NUMBER%
 
-                docker push "shaahidgg/php-contactform:$env:BUILD_NUMBER"
-
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Docker image push failed."
-                }
+                if errorlevel 1 (
+                    echo Docker image push failed.
+                    exit /b 1
+                )
             '''
         }
     }
