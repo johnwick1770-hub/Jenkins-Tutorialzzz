@@ -22,7 +22,7 @@ pipeline {
 
         stage('pushImage') {
     steps {
-        echo 'Pushing Image to DockerHub...'
+        echo 'Pushing Image to Docker Hub...'
 
         withCredentials([
             usernamePassword(
@@ -32,17 +32,24 @@ pipeline {
             )
         ]) {
             powershell '''
-                docker logout
+                Write-Host "Docker username: $env:DOCKER_USER"
+                Write-Host "Token length: $($env:DOCKER_TOKEN.Length)"
+
+                if ([string]::IsNullOrWhiteSpace($env:DOCKER_TOKEN)) {
+                    throw "Jenkins did not load the Docker Hub token."
+                }
+
+                docker logout 2>$null
 
                 $env:DOCKER_TOKEN | docker login `
-                    --username $env:DOCKER_USER `
+                    --username "$env:DOCKER_USER" `
                     --password-stdin
 
                 if ($LASTEXITCODE -ne 0) {
                     throw "Docker Hub login failed."
                 }
 
-                docker push shaahidgg/php-contactform:${env:BUILD_NUMBER}
+                docker push "shaahidgg/php-contactform:$env:BUILD_NUMBER"
 
                 if ($LASTEXITCODE -ne 0) {
                     throw "Docker image push failed."
