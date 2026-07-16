@@ -22,24 +22,22 @@ pipeline {
 
         stage("pushImage") {
     steps {
-        script {
-            echo "Pushing Image to DockerHub..."
+        echo "Pushing Image to DockerHub..."
 
-            withCredentials([
-                usernamePassword(
-                    credentialsId: 'dockerhub-pat',
-                    passwordVariable: 'PASS',
-                    usernameVariable: 'USER'
-                )
-            ]) {
-                powershell '''
-                    $env:PASS | docker login --username $env:USER --password-stdin
-                '''
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-pat',
+                usernameVariable: 'USER',
+                passwordVariable: 'PASS'
+            )
+        ]) {
+            powershell '''
+                $env:PASS | docker login --username $env:USER --password-stdin
+            '''
 
-                bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
+            bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
 
-                bat "docker logout"
-            }
+            bat "docker logout"
         }
     }
 }
