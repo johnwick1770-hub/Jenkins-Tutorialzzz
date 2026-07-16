@@ -21,16 +21,28 @@ pipeline {
         }
 
         stage("pushImage") {
-            steps {
-                script {
-                    echo "Pushing Image to DockerHub..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                        bat "echo $PASS | docker login -u $USER --password-stdin"
-                        bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
-                    }
-                }
+    steps {
+        script {
+            echo "Pushing Image to DockerHub..."
+
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'docker-login',
+                    passwordVariable: 'PASS',
+                    usernameVariable: 'USER'
+                )
+            ]) {
+                bat '''
+                    echo %PASS% | docker login -u %USER% --password-stdin
+                '''
+
+                bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
+
+                bat "docker logout"
             }
         }
+    }
+}
 
         stage("deployCompose") {
             steps {
