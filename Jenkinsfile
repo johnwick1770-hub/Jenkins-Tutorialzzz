@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        ImageRegistry = 'shaahidgg' 
+        ImageRegistry = 'shaahidgg'
+        ImageRepository = 'phpcontactform' 
         EC2_IP = '50.17.126.209'
         DockerComposeFile = 'docker-compose.yml'
         DotEnvFile = '.env'
@@ -14,7 +15,7 @@ pipeline {
             steps {
                 script {
                     echo "Building Docker Image..."
-                    bat "docker build -t ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER} ."
+                    bat "docker build -t ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER} ."
                 }
             }
         }
@@ -25,7 +26,7 @@ pipeline {
                     echo "Pushing Image to DockerHub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                         bat "echo $PASS | docker login -u $USER --password-stdin"
-                        bat "docker push ${ImageRegistry}/${JOB_NAME}:${BUILD_NUMBER}"
+                        bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
                     }
                 }
             }
