@@ -32,8 +32,8 @@ pipeline {
                     usernameVariable: 'USER'
                 )
             ]) {
-                bat '''
-                    echo %PASS% | docker login -u %USER% --password-stdin
+                powershell '''
+                    $env:PASS | docker login --username $env:USER --password-stdin
                 '''
 
                 bat "docker push ${ImageRegistry}/${ImageRepository}:${BUILD_NUMBER}"
