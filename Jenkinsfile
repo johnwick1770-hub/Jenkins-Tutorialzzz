@@ -54,19 +54,42 @@ pipeline {
     }
 }
 
-        stage("deployCompose") {
+    stage("deployCompose") {
     steps {
         echo "Deploying with Docker Compose..."
 
         withCredentials([
             sshUserPrivateKey(
-                credentialsId: 'ec2',
+                credentialsId: 'ubuntu',
                 keyFileVariable: 'EC2_KEY',
                 usernameVariable: 'EC2_USER'
             )
         ]) {
             bat '''
                 @echo off
+
+                rem Remove inherited permissions from the temporary key
+                icacls "%EC2_KEY%" /inheritance:r
+
+                rem Remove broad access groups
+                icacls "%EC2_KEY%" /remove "BUILTIN\\Users"
+                icacls "%EC2_KEY%" /remove "Authenticated Users"
+                icacls "%EC2_KEY%" /remove "Everyone"
+
+                rem Give the Jenkins service account read permission
+                icacls "%EC2_KEY%" /grant:r "SYSTEM:R"
+
+                echo Testing SSH connection...
+
+                ssh -i "%EC2_KEY%" ^
+                    -o StrictHostKeyChecking=no ^
+                    "%EC2_USER%@%EC2_IP%" ^
+                    "echo SSH connection successful"
+
+                if errorlevel 1 (
+                    echo SSH connection failed.
+                    exit /b 1
+                )
 
                 scp -i "%EC2_KEY%" ^
                     -o StrictHostKeyChecking=no ^
@@ -101,5 +124,6 @@ pipeline {
         }
     }
 }
+
     }
 }
